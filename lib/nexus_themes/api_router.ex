@@ -133,12 +133,10 @@ defmodule NexusThemes.ApiRouter do
     }
   end
 
-  # Normalise form params: the JS form sends `stylesheet_url` and `thumbnail_url`
-  # as display values. Map these back to the internal path fields.
-  # For stylesheet_url: store as-is in stylesheet_path (the serialiser handles
-  # returning full URLs for both local paths and external http URLs).
-  # For thumbnail_url: thumbnails are uploaded via the extension image endpoint
-  # and the URL is stored directly — store in thumbnail_path.
+  # Normalise form params before passing to the changeset.
+  # The JS sends stylesheet_url and thumbnail_path directly.
+  # stylesheet_url maps to stylesheet_path.
+  # thumbnail_path is the full /uploads/... URL stored as-is (serialiser handles it).
   defp normalise_params(params) do
     params
     |> then(fn p ->
@@ -147,26 +145,7 @@ defmodule NexusThemes.ApiRouter do
         url -> Map.put(p, "stylesheet_path", url)
       end
     end)
-    |> then(fn p ->
-      case p["thumbnail_url"] do
-        nil -> p
-        url ->
-          # Extract the relative path from the full URL so Storage.url/2 works
-          # correctly. If it's a full /uploads/extensions/... URL, strip the prefix.
-          rel = strip_storage_prefix(url)
-          Map.put(p, "thumbnail_path", rel)
-      end
-    end)
     |> Map.drop(["stylesheet_url", "thumbnail_url"])
-  end
-
-  @storage_prefix "/uploads/extensions/theme-showcase/"
-  defp strip_storage_prefix(url) when is_binary(url) do
-    if String.starts_with?(url, @storage_prefix) do
-      String.replace_prefix(url, @storage_prefix, "")
-    else
-      url
-    end
   end
   defp stylesheet_url(nil), do: nil
   defp stylesheet_url(path) do
@@ -183,8 +162,20 @@ defmodule NexusThemes.ApiRouter do
     end
   end
 
-  defp thumbnail_url(nil),   do: nil
-  defp thumbnail_url(path),  do: Nexus.Extensions.Storage.url("theme-showcase", path)
+  defp thumbnail_url(nil),  do: nil
+  defp thumbnail_url(path) do
+    cond do
+      # Full external URL
+      String.starts_with?(path, "http://") or String.starts_with?(path, "https://") ->
+        path
+      # Absolute local path stored directly (e.g. /uploads/webp/extensions/...)
+      String.starts_with?(path, "/") ->
+        path
+      # Relative path — construct via Storage
+      true ->
+        Nexus.Extensions.Storage.url("theme-showcase", path)
+    end
+  end
 
   defp format_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->

@@ -641,14 +641,9 @@
           recordId: theme ? String(theme.id) : "new",
         });
         if (result.error) throw new Error(result.error);
-        // Store both the display URL and the relative path.
-        // The API expects thumbnail_path (relative), not thumbnail_url.
-        // Strip the /uploads/extensions/theme-showcase/ prefix to get the relative path.
-        const thumbPrefix = "/uploads/extensions/theme-showcase/";
-        const thumbPath   = result.url.startsWith(thumbPrefix)
-          ? result.url.slice(thumbPrefix.length)
-          : result.url;
-        setForm(f => ({ ...f, thumbnail_url: result.url, thumbnail_path: thumbPath }));
+        // Store the full URL directly as thumbnail_path.
+        // The server serialiser handles absolute /uploads/... paths by returning them as-is.
+        setForm(f => ({ ...f, thumbnail_url: result.url, thumbnail_path: result.url }));
         toast("Thumbnail uploaded");
       } catch (e) {
         toast(e.message || "Upload failed", "err");
