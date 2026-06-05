@@ -170,10 +170,16 @@ defmodule NexusThemes.ApiRouter do
   end
   defp stylesheet_url(nil), do: nil
   defp stylesheet_url(path) do
-    if String.starts_with?(path, "http://") or String.starts_with?(path, "https://") do
-      path
-    else
-      Nexus.Extensions.Storage.url("theme-showcase", path)
+    cond do
+      # Already a full external URL
+      String.starts_with?(path, "http://") or String.starts_with?(path, "https://") ->
+        path
+      # Already an absolute local path (stored before normalise_params was in place)
+      String.starts_with?(path, "/") ->
+        path
+      # Relative path — construct the full URL via Storage
+      true ->
+        Nexus.Extensions.Storage.url("theme-showcase", path)
     end
   end
 

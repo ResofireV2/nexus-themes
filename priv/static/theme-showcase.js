@@ -703,7 +703,7 @@
       style: {
         flex: 1, background: "var(--s1)",
         border: "0.5px solid var(--b1)",
-        borderRadius: "var(--border-radius-lg)",
+        borderRadius: 14,
         padding: "14px 16px",
         overflowY: "auto",
       }
@@ -730,7 +730,7 @@
       // GitHub import section
       React.createElement("div", {
         style: {
-          background: "var(--s2)", borderRadius: "var(--border-radius-md)",
+          background: "var(--s2)", borderRadius: 10,
           padding: "10px 12px", marginBottom: 12,
         }
       },
@@ -862,7 +862,7 @@
           // Preview or placeholder
           React.createElement("div", {
             style: {
-              flex: "0 0 120px", aspectRatio: "16/10", borderRadius: "var(--border-radius-md)",
+              flex: "0 0 120px", aspectRatio: "16/10", borderRadius: 10,
               overflow: "hidden", border: "0.5px solid var(--b1)", position: "relative",
             }
           },
@@ -880,7 +880,7 @@
             style: {
               flex: 1,
               border: "0.5px dashed var(--b2)",
-              borderRadius: "var(--border-radius-md)",
+              borderRadius: 10,
               minHeight: 76,
               display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
@@ -922,7 +922,7 @@
               disabled: deleting,
               style: {
                 fontSize: 11, padding: "4px 10px",
-                borderRadius: "var(--border-radius-md)",
+                borderRadius: 10,
                 border: "0.5px solid var(--b1)",
                 background: "transparent", color: "var(--red)",
                 cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
@@ -935,7 +935,7 @@
               onClick: onCancel,
               style: {
                 fontSize: 11, padding: "4px 10px",
-                borderRadius: "var(--border-radius-md)",
+                borderRadius: 10,
                 border: "0.5px solid var(--b1)",
                 background: "transparent", color: "var(--t3)",
                 cursor: "pointer",
@@ -949,7 +949,7 @@
             disabled: saving,
             style: {
               fontSize: 11, padding: "4px 12px",
-              borderRadius: "var(--border-radius-md)",
+              borderRadius: 10,
               border: "0.5px solid var(--b2)",
               background: "transparent", color: "var(--t2)",
               cursor: "pointer",
@@ -960,7 +960,7 @@
             disabled: saving,
             style: {
               fontSize: 11, padding: "4px 12px",
-              borderRadius: "var(--border-radius-md)",
+              borderRadius: 10,
               border: "0.5px solid var(--ac)",
               background: "transparent", color: "var(--ac-text)",
               cursor: "pointer",
@@ -1059,7 +1059,7 @@
                   border: selected === t.id
                     ? "0.5px solid var(--ac)"
                     : "0.5px solid var(--b1)",
-                  borderRadius: "var(--border-radius-md)",
+                  borderRadius: 10,
                   padding: "9px 11px",
                   cursor: "pointer",
                   display: "flex", alignItems: "center", gap: 9,
@@ -1102,7 +1102,7 @@
           onClick: handleNew,
           style: {
             fontSize: 11, padding: "7px 10px",
-            borderRadius: "var(--border-radius-md)",
+            borderRadius: 10,
             border: "0.5px solid var(--b2)",
             background: "transparent", color: "var(--t2)",
             cursor: "pointer",
