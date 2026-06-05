@@ -36,7 +36,7 @@ defmodule NexusThemes.GitHubFetcher do
         description:     meta["description"],
         mode:            infer_mode(meta),
         css_vars:        meta["css_vars"] || %{},
-        stylesheet_path: css_path,
+        stylesheet_url:  stylesheet_url(css_path),
         github_repo:     repo
       }}
     else
@@ -175,4 +175,8 @@ defmodule NexusThemes.GitHubFetcher do
     end
   end
   defp infer_mode(_), do: "dark"
+
+  defp stylesheet_url(nil), do: nil
+  defp stylesheet_url(rel_path),
+    do: Nexus.Extensions.Storage.url(@slug, rel_path)
 end

@@ -49,7 +49,7 @@ defmodule NexusThemes.ApiRouter do
 
         case Jason.decode(body) do
           {:ok, params} ->
-            case ThemeContext.create(params) do
+            case ThemeContext.create(normalise_params(params)) do
               {:ok, theme}      -> send_json(conn, 201, %{theme: theme_json(theme)})
               {:error, cs}      -> send_json(conn, 422, %{errors: format_errors(cs)})
             end
@@ -71,7 +71,7 @@ defmodule NexusThemes.ApiRouter do
 
         case Jason.decode(body) do
           {:ok, params} ->
-            case ThemeContext.update(id, params) do
+            case ThemeContext.update(id, normalise_params(params)) do
               {:ok, theme}       -> send_json(conn, 200, %{theme: theme_json(theme)})
               {:error, :not_found} -> send_json(conn, 404, %{error: "Theme not found"})
               {:error, cs}       -> send_json(conn, 422, %{errors: format_errors(cs)})
@@ -149,8 +149,49 @@ defmodule NexusThemes.ApiRouter do
     }
   end
 
-  defp stylesheet_url(nil),  do: nil
-  defp stylesheet_url(path), do: Nexus.Extensions.Storage.url("theme-showcase", path)
+  # Normalise form params: the JS form sends `stylesheet_url` and `thumbnail_url`
+  # as display values. Map these back to the internal path fields.
+  # For stylesheet_url: store as-is in stylesheet_path (the serialiser handles
+  # returning full URLs for both local paths and external http URLs).
+  # For thumbnail_url: thumbnails are uploaded via the extension image endpoint
+  # and the URL is stored directly — store in thumbnail_path.
+  defp normalise_params(params) do
+    params
+    |> then(fn p ->
+      case p["stylesheet_url"] do
+        nil -> p
+        url -> Map.put(p, "stylesheet_path", url)
+      end
+    end)
+    |> then(fn p ->
+      case p["thumbnail_url"] do
+        nil -> p
+        url ->
+          # Extract the relative path from the full URL so Storage.url/2 works
+          # correctly. If it's a full /uploads/extensions/... URL, strip the prefix.
+          rel = strip_storage_prefix(url)
+          Map.put(p, "thumbnail_path", rel)
+      end
+    end)
+    |> Map.drop(["stylesheet_url", "thumbnail_url"])
+  end
+
+  @storage_prefix "/uploads/extensions/theme-showcase/"
+  defp strip_storage_prefix(url) when is_binary(url) do
+    if String.starts_with?(url, @storage_prefix) do
+      String.replace_prefix(url, @storage_prefix, "")
+    else
+      url
+    end
+  end
+  defp stylesheet_url(nil), do: nil
+  defp stylesheet_url(path) do
+    if String.starts_with?(path, "http://") or String.starts_with?(path, "https://") do
+      path
+    else
+      Nexus.Extensions.Storage.url("theme-showcase", path)
+    end
+  end
 
   defp thumbnail_url(nil),   do: nil
   defp thumbnail_url(path),  do: Nexus.Extensions.Storage.url("theme-showcase", path)
