@@ -46,15 +46,21 @@
       if (k.startsWith("--")) r.style.setProperty(k, v);
     });
 
-    // Swap stylesheet
-    if (theme.stylesheet_url) {
+    // Swap stylesheet — sanitise the URL in case of path doubling from legacy data
+    // (a stored absolute path re-wrapped by Storage.url produces a doubled prefix)
+    const rawStylesheet = theme.stylesheet_url;
+    const cleanStylesheet = rawStylesheet
+      ? rawStylesheet.replace(/(\/uploads\/extensions\/[^/]+)\1/, "$1")
+      : null;
+
+    if (cleanStylesheet) {
       if (stylesheetEl) {
-        stylesheetEl.href = theme.stylesheet_url;
+        stylesheetEl.href = cleanStylesheet;
       } else {
         const link  = document.createElement("link");
         link.rel    = "stylesheet";
         link.id     = "nexus-theme-showcase-preview-stylesheet";
-        link.href   = theme.stylesheet_url;
+        link.href   = cleanStylesheet;
         document.head.appendChild(link);
       }
     }
@@ -546,7 +552,7 @@
     name: "", author: "", description: "",
     mode: "dark", status: "draft",
     css_vars: {}, stylesheet_url: "",
-    github_repo: "", thumbnail_url: null,
+    github_repo: "", thumbnail_url: null, thumbnail_path: null,
   };
 
   function ThemeForm({ theme, onSaved, onDeleted, onCancel }) {
@@ -564,6 +570,7 @@
         stylesheet_url: theme.stylesheet_url || "",
         github_repo:    theme.github_repo || "",
         thumbnail_url:  theme.thumbnail_url || null,
+        thumbnail_path: null, // set on upload, not round-tripped from API URL
       };
     });
     const [cssVarsText, setCssVarsText]   = useState(
@@ -634,7 +641,14 @@
           recordId: theme ? String(theme.id) : "new",
         });
         if (result.error) throw new Error(result.error);
-        set("thumbnail_url", result.url);
+        // Store both the display URL and the relative path.
+        // The API expects thumbnail_path (relative), not thumbnail_url.
+        // Strip the /uploads/extensions/theme-showcase/ prefix to get the relative path.
+        const thumbPrefix = "/uploads/extensions/theme-showcase/";
+        const thumbPath   = result.url.startsWith(thumbPrefix)
+          ? result.url.slice(thumbPrefix.length)
+          : result.url;
+        setForm(f => ({ ...f, thumbnail_url: result.url, thumbnail_path: thumbPath }));
         toast("Thumbnail uploaded");
       } catch (e) {
         toast(e.message || "Upload failed", "err");
@@ -648,8 +662,16 @@
     async function handleSave(publishStatus) {
       if (cssVarsError) { toast("Fix CSS vars JSON before saving", "err"); return; }
       setSaving(true);
+      // Exclude server-managed fields from the payload when github_repo is set.
+      // stylesheet_url is stored by the server during GitHub fetch and should not
+      // be round-tripped through the form — doing so can cause path doubling.
       const payload = { ...form, status: publishStatus };
-      // stylesheet_url: if fetched from GitHub, stored on server; send as-is
+      if (form.github_repo) delete payload.stylesheet_url;
+      // Send thumbnail_path (relative) directly — Theme.changeset casts thumbnail_path,
+      // not thumbnail_url. Remove thumbnail_url to avoid confusion server-side.
+      // thumbnail_path is set by handleThumbUpload; null means no new upload this session.
+      delete payload.thumbnail_url;
+      if (!form.thumbnail_path) delete payload.thumbnail_path;
       try {
         if (isNew) {
           const { theme: saved } = await apiFetch("/admin/themes", {
