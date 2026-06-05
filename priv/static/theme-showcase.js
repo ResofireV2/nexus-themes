@@ -115,18 +115,18 @@
         style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 24, flexWrap: "wrap" }
       },
         // Search input
-        React.createElement("div", { style: { position: "relative", flex: "0 0 200px" } },
+        React.createElement("div", { style: { position: "relative", flex: "0 0 240px" } },
           React.createElement("i", {
             className: "ti ti-search",
-            style: { position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "var(--t4)", pointerEvents: "none" }
+            style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "var(--t4)", pointerEvents: "none" }
           }),
           React.createElement("input", {
             value: search,
             onChange: e => setSearch(e.target.value),
             placeholder: "Search themes…",
             style: {
-              width: "100%", fontSize: 13, padding: "6px 10px 6px 30px",
-              borderRadius: "var(--border-radius-md)",
+              width: "100%", fontSize: 14, padding: "8px 14px 8px 34px",
+              borderRadius: 20,
               border: "0.5px solid var(--b2)",
               background: "var(--s2)", color: "var(--t1)",
               boxSizing: "border-box",
@@ -144,7 +144,7 @@
             key: f,
             onClick: () => setFilter(f),
             style: {
-              fontSize: 12, padding: "4px 12px", borderRadius: 99,
+              fontSize: 13, padding: "6px 14px", borderRadius: 99,
               border: filter === f ? "0.5px solid var(--b2)" : "0.5px solid var(--b1)",
               background: filter === f ? "var(--s2)" : "transparent",
               color: filter === f ? "var(--t1)" : "var(--t3)",
@@ -163,7 +163,7 @@
             key: val,
             onClick: () => setSort(val),
             style: {
-              fontSize: 12, padding: "4px 12px", borderRadius: 99,
+              fontSize: 13, padding: "6px 14px", borderRadius: 99,
               border: sort === val ? "0.5px solid var(--b2)" : "0.5px solid var(--b1)",
               background: sort === val ? "var(--s2)" : "transparent",
               color: sort === val ? "var(--t1)" : "var(--t3)",
@@ -185,7 +185,7 @@
       filtered.length > 0 && React.createElement("div", {
         style: {
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
           gap: 16,
         }
       },
@@ -208,14 +208,14 @@
       style: {
         background: "var(--s1)",
         border: "0.5px solid var(--b1)",
-        borderRadius: "var(--border-radius-lg)",
+        borderRadius: 14,
         overflow: "hidden",
         cursor: "default",
       }
     },
       // Thumbnail — real image or generated mock
       React.createElement("div", {
-        style: { width: "100%", aspectRatio: "16/10", position: "relative", overflow: "hidden" }
+        style: { width: "100%", aspectRatio: "16/10", position: "relative", overflow: "hidden", borderRadius: "14px 14px 0 0" }
       },
         theme.thumbnail_url
           ? React.createElement("img", {
@@ -229,10 +229,10 @@
       // Card body
       React.createElement("div", { style: { padding: "10px 12px 12px" } },
         React.createElement("p", {
-          style: { fontSize: 13, fontWeight: 500, color: "var(--t1)", margin: "0 0 2px" }
+          style: { fontSize: 15, fontWeight: 600, color: "var(--t1)", margin: "0 0 4px" }
         }, theme.name || "Untitled"),
         React.createElement("p", {
-          style: { fontSize: 11, color: "var(--t3)", margin: "0 0 8px" }
+          style: { fontSize: 13, color: "var(--t3)", margin: "0 0 10px" }
         }, [theme.author && `by ${theme.author}`, theme.mode].filter(Boolean).join(" · ")),
 
         // Swatches
@@ -241,7 +241,7 @@
         // Preview button — stub, wired in Stage 5
         React.createElement("button", {
           className: "btn-ghost",
-          style: { width: "100%", fontSize: 12, padding: "5px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 },
+          style: { width: "100%", fontSize: 14, padding: "9px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
           onClick: () => toast("Preview coming in the next update", "warn"),
         },
           React.createElement("i", { className: "ti ti-eye", style: { fontSize: 13 } }),
@@ -340,7 +340,7 @@
         React.createElement("div", {
           key: i,
           style: {
-            width: 12, height: 12, borderRadius: "50%",
+            width: 16, height: 16, borderRadius: "50%",
             background: c,
             border: "0.5px solid var(--b2)",
           },
