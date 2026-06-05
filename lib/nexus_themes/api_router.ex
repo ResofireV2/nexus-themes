@@ -45,17 +45,10 @@ defmodule NexusThemes.ApiRouter do
   post "/admin/themes" do
     case Permissions.check(@slug, "can_manage_themes", conn.assigns[:current_user]) do
       :ok ->
-        {:ok, body, conn} = Plug.Conn.read_body(conn)
-
-        case Jason.decode(body) do
-          {:ok, params} ->
-            case ThemeContext.create(normalise_params(params)) do
-              {:ok, theme}      -> send_json(conn, 201, %{theme: theme_json(theme)})
-              {:error, cs}      -> send_json(conn, 422, %{errors: format_errors(cs)})
-            end
-
-          {:error, _} ->
-            send_json(conn, 400, %{error: "Invalid JSON"})
+        params = conn.body_params
+        case ThemeContext.create(normalise_params(params)) do
+          {:ok, theme} -> send_json(conn, 201, %{theme: theme_json(theme)})
+          {:error, cs} -> send_json(conn, 422, %{errors: format_errors(cs)})
         end
 
       :error ->
@@ -67,18 +60,11 @@ defmodule NexusThemes.ApiRouter do
   patch "/admin/themes/:id" do
     case Permissions.check(@slug, "can_manage_themes", conn.assigns[:current_user]) do
       :ok ->
-        {:ok, body, conn} = Plug.Conn.read_body(conn)
-
-        case Jason.decode(body) do
-          {:ok, params} ->
-            case ThemeContext.update(id, normalise_params(params)) do
-              {:ok, theme}       -> send_json(conn, 200, %{theme: theme_json(theme)})
-              {:error, :not_found} -> send_json(conn, 404, %{error: "Theme not found"})
-              {:error, cs}       -> send_json(conn, 422, %{errors: format_errors(cs)})
-            end
-
-          {:error, _} ->
-            send_json(conn, 400, %{error: "Invalid JSON"})
+        params = conn.body_params
+        case ThemeContext.update(id, normalise_params(params)) do
+          {:ok, theme}         -> send_json(conn, 200, %{theme: theme_json(theme)})
+          {:error, :not_found} -> send_json(conn, 404, %{error: "Theme not found"})
+          {:error, cs}         -> send_json(conn, 422, %{errors: format_errors(cs)})
         end
 
       :error ->
@@ -106,10 +92,8 @@ defmodule NexusThemes.ApiRouter do
   post "/admin/themes/fetch-github" do
     case Permissions.check(@slug, "can_manage_themes", conn.assigns[:current_user]) do
       :ok ->
-        {:ok, body, conn} = Plug.Conn.read_body(conn)
-
-        case Jason.decode(body) do
-          {:ok, %{"url" => url}} ->
+        case conn.body_params do
+          %{"url" => url} when is_binary(url) and url != "" ->
             case NexusThemes.GitHubFetcher.fetch(url) do
               {:ok, result}    -> send_json(conn, 200, result)
               {:error, reason} -> send_json(conn, 422, %{error: reason})
