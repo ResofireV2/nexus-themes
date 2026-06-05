@@ -12,6 +12,8 @@
   "repository": "https://github.com/ResofireV2/nexus-themes",
   "license": "MIT",
   "tags": ["themes", "showcase"],
+  "logo_url": "/ext/theme-showcase/assets/logo.webp",
+  "banner_url": "/ext/theme-showcase/assets/banner.webp",
   "explore": {
     "label": "Themes",
     "icon": "fa-palette",
