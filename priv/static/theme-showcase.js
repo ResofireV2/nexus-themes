@@ -324,16 +324,16 @@
       }
     }
 
-    const labelStyle  = { fontSize: 11, color: "var(--t3)", marginBottom: 3, display: "block" };
+    const labelStyle  = { fontSize: 13, color: "var(--t3)", marginBottom: 5, display: "block" };
     const inputStyle  = {
-      width: "100%", fontSize: 12, padding: "5px 8px",
-      borderRadius: "var(--border-radius-md)",
-      border: "0.5px solid var(--b2)",
-      background: "var(--s2)", color: "var(--t1)",
+      width: "100%", fontSize: 14, padding: "8px 12px",
+      borderRadius: 10,
+      border: "0.5px solid rgba(255,255,255,0.1)",
+      background: "rgba(255,255,255,0.05)", color: "var(--t1)",
       boxSizing: "border-box",
     };
-    const row2Style   = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 };
-    const fieldStyle  = { marginBottom: 10 };
+    const row2Style   = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 };
+    const fieldStyle  = { marginBottom: 14 };
 
     return React.createElement("div", {
       style: {
@@ -347,8 +347,8 @@
       // Header
       React.createElement("div", {
         style: {
-          fontSize: 13, fontWeight: 500, color: "var(--t1)",
-          marginBottom: 12, paddingBottom: 10,
+          fontSize: 15, fontWeight: 500, color: "var(--t1)",
+          marginBottom: 14, paddingBottom: 12,
           borderBottom: "0.5px solid var(--b1)",
           display: "flex", alignItems: "center",
           justifyContent: "space-between",
@@ -357,7 +357,7 @@
         React.createElement("span", null, isNew ? "New theme" : (form.name || "Edit theme")),
         form.status === "published" && React.createElement("span", {
           style: {
-            fontSize: 10, padding: "2px 8px", borderRadius: 99,
+            fontSize: 11, padding: "3px 10px", borderRadius: 99,
             background: "rgba(16,185,129,0.12)", color: "var(--green)",
           }
         }, "published")
@@ -370,7 +370,7 @@
           padding: "10px 12px", marginBottom: 12,
         }
       },
-        React.createElement("label", { style: labelStyle }, "Import from GitHub"),
+        React.createElement("label", { style: { ...labelStyle, fontSize: 13 } }, "Import from GitHub"),
         React.createElement("div", { style: { display: "flex", gap: 8 } },
           React.createElement("input", {
             style: { ...inputStyle, flex: 1 },
@@ -381,7 +381,7 @@
           }),
           React.createElement("button", {
             className: "btn-ghost",
-            style: { fontSize: 11, padding: "5px 12px", whiteSpace: "nowrap" },
+            style: { fontSize: 13, padding: "8px 14px", whiteSpace: "nowrap" },
             onClick: handleFetch,
             disabled: fetching || !githubUrl.trim(),
           },
@@ -394,7 +394,7 @@
           )
         ),
         React.createElement("p", {
-          style: { fontSize: 10, color: "var(--t4)", margin: "5px 0 0" }
+          style: { fontSize: 12, color: "var(--t4)", margin: "6px 0 0" }
         }, "Fetches the latest release, extracts theme.json and theme.css, and pre-fills the form.")
       ),
 
@@ -458,7 +458,7 @@
       React.createElement("div", { style: fieldStyle },
         React.createElement("label", { style: { ...labelStyle, display: "flex", justifyContent: "space-between" } },
           React.createElement("span", null, "CSS variables (JSON)"),
-          cssVarsError && React.createElement("span", { style: { color: "var(--red)", fontSize: 10 } }, cssVarsError)
+          cssVarsError && React.createElement("span", { style: { color: "var(--red)", fontSize: 12 } }, cssVarsError)
         ),
         React.createElement("textarea", {
           style: {
@@ -529,10 +529,10 @@
               ? React.createElement("i", { className: "ti ti-loader-2 spin", style: { fontSize: 20, color: "var(--t3)" } })
               : React.createElement(React.Fragment, null,
                   React.createElement("i", { className: "ti ti-photo-up", style: { fontSize: 20, color: "var(--t3)" } }),
-                  React.createElement("span", { style: { fontSize: 11, color: "var(--t3)" } },
+                  React.createElement("span", { style: { fontSize: 13, color: "var(--t3)" } },
                     form.thumbnail_url ? "Replace thumbnail" : "Upload thumbnail"
                   ),
-                  React.createElement("span", { style: { fontSize: 10, color: "var(--t4)" } }, "PNG or WebP · 800×500 px")
+                  React.createElement("span", { style: { fontSize: 11, color: "var(--t4)" } }, "PNG or WebP · 800×500 px")
                 )
           ),
           React.createElement("input", {
