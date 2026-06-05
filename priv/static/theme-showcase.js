@@ -42,19 +42,216 @@
     priority: 60,
   });
 
-  // ---------------------------------------------------------------------------
-  // Route — /ext/theme-showcase  (placeholder until Stage 4)
+// ---------------------------------------------------------------------------
+  // Public Themes page — /ext/theme-showcase
   // ---------------------------------------------------------------------------
 
-  function ThemesPagePlaceholder() {
-    return React.createElement(
-      "div",
-      { style: { padding: "2rem", color: "var(--t2)", fontSize: 14 } },
-      "Theme Showcase — coming soon."
+  function ThemesPage({ currentUser }) {
+    const [themes, setThemes]   = useState(null);
+    const [error, setError]     = useState(null);
+    const [search, setSearch]   = useState("");
+    const [filter, setFilter]   = useState("all");   // all | dark | light
+    const [sort, setSort]       = useState("latest"); // latest | oldest | az
+
+    useEffect(() => {
+      fetch(`/ext/${SLUG}/api/themes`, {
+        headers: (() => {
+          const t = localStorage.getItem("nexus_token");
+          return t ? { "Authorization": `Bearer ${t}` } : {};
+        })(),
+      })
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(d => setThemes(d.themes || []))
+        .catch(() => setError("Failed to load themes."));
+    }, []);
+
+    const filtered = React.useMemo(() => {
+      if (!themes) return [];
+      let list = [...themes];
+
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        list = list.filter(t =>
+          (t.name   || "").toLowerCase().includes(q) ||
+          (t.author || "").toLowerCase().includes(q)
+        );
+      }
+
+      if (filter === "dark")  list = list.filter(t => t.mode === "dark"  || t.mode === "both");
+      if (filter === "light") list = list.filter(t => t.mode === "light" || t.mode === "both");
+
+      if (sort === "latest") list.sort((a, b) => new Date(b.inserted_at) - new Date(a.inserted_at));
+      if (sort === "oldest") list.sort((a, b) => new Date(a.inserted_at) - new Date(b.inserted_at));
+      if (sort === "az")     list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+      return list;
+    }, [themes, search, filter, sort]);
+
+    if (error) return React.createElement("div", {
+      style: { padding: "3rem 0", textAlign: "center", color: "var(--t4)", fontSize: 14 }
+    }, error);
+
+    if (!themes) return React.createElement("div", {
+      style: { padding: "3rem 0", textAlign: "center", color: "var(--t4)", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }
+    },
+      React.createElement("i", { className: "ti ti-loader-2 spin" }),
+      "Loading…"
+    );
+
+    return React.createElement("div", { style: { paddingTop: 24, paddingBottom: 40 } },
+
+      // Page header
+      React.createElement("div", { style: { marginBottom: 20 } },
+        React.createElement("h1", {
+          style: { fontSize: 22, fontWeight: 600, color: "var(--t1)", margin: "0 0 4px" }
+        }, "Themes"),
+        React.createElement("p", {
+          style: { fontSize: 14, color: "var(--t3)", margin: 0 }
+        }, "Explore visual styles available for Nexus")
+      ),
+
+      // Search + filter + sort row
+      React.createElement("div", {
+        style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 24, flexWrap: "wrap" }
+      },
+        // Search input
+        React.createElement("div", { style: { position: "relative", flex: "0 0 200px" } },
+          React.createElement("i", {
+            className: "ti ti-search",
+            style: { position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "var(--t4)", pointerEvents: "none" }
+          }),
+          React.createElement("input", {
+            value: search,
+            onChange: e => setSearch(e.target.value),
+            placeholder: "Search themes…",
+            style: {
+              width: "100%", fontSize: 13, padding: "6px 10px 6px 30px",
+              borderRadius: "var(--border-radius-md)",
+              border: "0.5px solid var(--b2)",
+              background: "var(--s2)", color: "var(--t1)",
+              boxSizing: "border-box",
+              outline: "none",
+            }
+          })
+        ),
+
+        // Divider
+        React.createElement("div", { style: { width: 1, height: 18, background: "var(--b1)" } }),
+
+        // Filter pills
+        ...["all", "dark", "light"].map(f =>
+          React.createElement("button", {
+            key: f,
+            onClick: () => setFilter(f),
+            style: {
+              fontSize: 12, padding: "4px 12px", borderRadius: 99,
+              border: filter === f ? "0.5px solid var(--b2)" : "0.5px solid var(--b1)",
+              background: filter === f ? "var(--s2)" : "transparent",
+              color: filter === f ? "var(--t1)" : "var(--t3)",
+              cursor: "pointer",
+              textTransform: "capitalize",
+            }
+          }, f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1))
+        ),
+
+        // Divider
+        React.createElement("div", { style: { width: 1, height: 18, background: "var(--b1)" } }),
+
+        // Sort pills
+        ...[ ["latest", "Latest"], ["oldest", "Oldest"], ["az", "A–Z"] ].map(([val, label]) =>
+          React.createElement("button", {
+            key: val,
+            onClick: () => setSort(val),
+            style: {
+              fontSize: 12, padding: "4px 12px", borderRadius: 99,
+              border: sort === val ? "0.5px solid var(--b2)" : "0.5px solid var(--b1)",
+              background: sort === val ? "var(--s2)" : "transparent",
+              color: sort === val ? "var(--t1)" : "var(--t3)",
+              cursor: "pointer",
+            }
+          }, label)
+        )
+      ),
+
+      // Empty state
+      filtered.length === 0 && React.createElement("div", {
+        style: { padding: "4rem 0", textAlign: "center", color: "var(--t4)", fontSize: 14 }
+      },
+        React.createElement("i", { className: "ti ti-palette", style: { fontSize: 32, display: "block", marginBottom: 10, opacity: 0.3 } }),
+        themes.length === 0 ? "No themes have been added yet." : "No themes match your search."
+      ),
+
+      // Card grid
+      filtered.length > 0 && React.createElement("div", {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+          gap: 16,
+        }
+      },
+        ...filtered.map(theme =>
+          React.createElement(ThemeCard, {
+            key: theme.id,
+            theme,
+          })
+        )
+      )
     );
   }
 
-  NE.registerRoute(SLUG, "/", ThemesPagePlaceholder, { title: "Themes" });
+  // ---------------------------------------------------------------------------
+  // Theme card
+  // ---------------------------------------------------------------------------
+
+  function ThemeCard({ theme }) {
+    return React.createElement("div", {
+      style: {
+        background: "var(--s1)",
+        border: "0.5px solid var(--b1)",
+        borderRadius: "var(--border-radius-lg)",
+        overflow: "hidden",
+        cursor: "default",
+      }
+    },
+      // Thumbnail — real image or generated mock
+      React.createElement("div", {
+        style: { width: "100%", aspectRatio: "16/10", position: "relative", overflow: "hidden" }
+      },
+        theme.thumbnail_url
+          ? React.createElement("img", {
+              src: theme.thumbnail_url,
+              alt: theme.name,
+              style: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
+            })
+          : React.createElement(ThumbMock, { cssVars: theme.css_vars })
+      ),
+
+      // Card body
+      React.createElement("div", { style: { padding: "10px 12px 12px" } },
+        React.createElement("p", {
+          style: { fontSize: 13, fontWeight: 500, color: "var(--t1)", margin: "0 0 2px" }
+        }, theme.name || "Untitled"),
+        React.createElement("p", {
+          style: { fontSize: 11, color: "var(--t3)", margin: "0 0 8px" }
+        }, [theme.author && `by ${theme.author}`, theme.mode].filter(Boolean).join(" · ")),
+
+        // Swatches
+        React.createElement(Swatches, { cssVars: theme.css_vars }),
+
+        // Preview button — stub, wired in Stage 5
+        React.createElement("button", {
+          className: "btn-ghost",
+          style: { width: "100%", fontSize: 12, padding: "5px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 },
+          onClick: () => toast("Preview coming in the next update", "warn"),
+        },
+          React.createElement("i", { className: "ti ti-eye", style: { fontSize: 13 } }),
+          "Preview theme"
+        )
+      )
+    );
+  }
+
+  NE.registerRoute(SLUG, "/", ThemesPage, { title: "Themes" });
 
   // ---------------------------------------------------------------------------
   // Colour swatch preview — mini forum mock built from css_vars
