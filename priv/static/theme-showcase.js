@@ -8,6 +8,111 @@
   const SLUG    = "theme-showcase";
 
   // ---------------------------------------------------------------------------
+  // Preview engine
+  //
+  // Applies a theme's CSS vars and stylesheet directly to documentElement
+  // without calling window._applyTheme — that would pollute localStorage and
+  // corrupt the user's cached appearance on hard refresh.
+  //
+  // State is persisted in sessionStorage so the banner survives SPA navigation.
+  // On hard refresh within a session the preview is silently dropped — the user
+  // lands back on the normal theme, which is correct behaviour.
+  // ---------------------------------------------------------------------------
+
+  const PREVIEW_KEY  = "nexus_theme_showcase_preview";
+  const PREVIEW_VARS = [
+    "--bg","--s1","--s2","--s3",
+    "--t1","--t2","--t3","--t4","--t5",
+    "--b1","--b2","--b3",
+    "--ac","--ac-on","--ac-bg","--ac-border","--ac-text",
+  ];
+
+  function startPreview(theme) {
+    const r = document.documentElement;
+
+    // Capture current state before touching anything
+    const originalVars = {};
+    PREVIEW_VARS.forEach(v => {
+      originalVars[v] = r.style.getPropertyValue(v) ||
+        getComputedStyle(r).getPropertyValue(v).trim();
+    });
+    const originalDataTheme   = r.getAttribute("data-theme") || "dark";
+    const stylesheetEl        = document.getElementById("nexus-theme-stylesheet");
+    const originalStylesheet  = stylesheetEl ? stylesheetEl.href : null;
+
+    // Apply theme CSS vars
+    const vars = theme.css_vars || {};
+    Object.entries(vars).forEach(([k, v]) => {
+      if (k.startsWith("--")) r.style.setProperty(k, v);
+    });
+
+    // Swap stylesheet
+    if (theme.stylesheet_url) {
+      if (stylesheetEl) {
+        stylesheetEl.href = theme.stylesheet_url;
+      } else {
+        const link  = document.createElement("link");
+        link.rel    = "stylesheet";
+        link.id     = "nexus-theme-showcase-preview-stylesheet";
+        link.href   = theme.stylesheet_url;
+        document.head.appendChild(link);
+      }
+    }
+
+    // Persist preview state for the banner
+    try {
+      sessionStorage.setItem(PREVIEW_KEY, JSON.stringify({
+        themeId:           theme.id,
+        themeName:         theme.name,
+        originalVars,
+        originalDataTheme,
+        originalStylesheet,
+      }));
+    } catch {}
+  }
+
+  function stopPreview() {
+    const raw = sessionStorage.getItem(PREVIEW_KEY);
+    if (!raw) return;
+
+    let state;
+    try { state = JSON.parse(raw); } catch { sessionStorage.removeItem(PREVIEW_KEY); return; }
+
+    const r = document.documentElement;
+
+    // Restore CSS vars
+    PREVIEW_VARS.forEach(v => {
+      const original = state.originalVars?.[v];
+      if (original) r.style.setProperty(v, original);
+      else r.style.removeProperty(v);
+    });
+
+    // Restore data-theme
+    if (state.originalDataTheme) r.setAttribute("data-theme", state.originalDataTheme);
+
+    // Restore stylesheet
+    const stylesheetEl = document.getElementById("nexus-theme-stylesheet");
+    if (stylesheetEl) {
+      stylesheetEl.href = state.originalStylesheet || "";
+    }
+
+    // Remove any preview-only stylesheet element
+    const previewEl = document.getElementById("nexus-theme-showcase-preview-stylesheet");
+    if (previewEl) previewEl.remove();
+
+    sessionStorage.removeItem(PREVIEW_KEY);
+  }
+
+  function getActivePreview() {
+    try {
+      const raw = sessionStorage.getItem(PREVIEW_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+
+
+  // ---------------------------------------------------------------------------
   // API helpers
   // ---------------------------------------------------------------------------
 
@@ -47,11 +152,30 @@
   // ---------------------------------------------------------------------------
 
   function ThemesPage({ currentUser }) {
-    const [themes, setThemes]   = useState(null);
-    const [error, setError]     = useState(null);
-    const [search, setSearch]   = useState("");
-    const [filter, setFilter]   = useState("all");   // all | dark | light
-    const [sort, setSort]       = useState("latest"); // latest | oldest | az
+    const [themes, setThemes]         = useState(null);
+    const [error, setError]           = useState(null);
+    const [search, setSearch]         = useState("");
+    const [filter, setFilter]         = useState("all");   // all | dark | light
+    const [sort, setSort]             = useState("latest"); // latest | oldest | az
+    const [preview, setPreview]       = useState(() => getActivePreview());
+
+    function handlePreview(theme) {
+      if (preview?.themeId === theme.id) {
+        // Clicking preview on the active theme exits preview
+        stopPreview();
+        setPreview(null);
+      } else {
+        // Exit any existing preview first, then start the new one
+        if (preview) stopPreview();
+        startPreview(theme);
+        setPreview(getActivePreview());
+      }
+    }
+
+    function handleExitPreview() {
+      stopPreview();
+      setPreview(null);
+    }
 
     useEffect(() => {
       fetch(`/ext/${SLUG}/api/themes`, {
@@ -99,6 +223,35 @@
     );
 
     return React.createElement("div", { style: { paddingTop: 24, paddingBottom: 40 } },
+
+      // Preview banner — shown while a theme is active
+      preview && React.createElement("div", {
+        style: {
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "12px 16px", borderRadius: 12, marginBottom: 20,
+          border: "0.5px solid rgba(127,119,221,0.4)",
+          background: "rgba(127,119,221,0.08)",
+        }
+      },
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+          React.createElement("div", {
+            style: { width: 8, height: 8, borderRadius: "50%", background: "var(--ac)", flexShrink: 0 }
+          }),
+          React.createElement("div", null,
+            React.createElement("div", {
+              style: { fontSize: 14, fontWeight: 500, color: "var(--t1)" }
+            }, `Previewing ${preview.themeName}`),
+            React.createElement("div", {
+              style: { fontSize: 12, color: "var(--t3)", marginTop: 1 }
+            }, "You’re browsing with this theme applied. Only visible to you.")
+          )
+        ),
+        React.createElement("button", {
+          className: "btn-ghost",
+          style: { fontSize: 13, padding: "6px 14px", whiteSpace: "nowrap" },
+          onClick: handleExitPreview,
+        }, "Exit preview")
+      ),
 
       // Page header
       React.createElement("div", { style: { marginBottom: 20 } },
@@ -193,6 +346,8 @@
           React.createElement(ThemeCard, {
             key: theme.id,
             theme,
+            isPreviewing: preview?.themeId === theme.id,
+            onPreview: handlePreview,
           })
         )
       )
@@ -203,11 +358,11 @@
   // Theme card
   // ---------------------------------------------------------------------------
 
-  function ThemeCard({ theme }) {
+  function ThemeCard({ theme, isPreviewing, onPreview }) {
     return React.createElement("div", {
       style: {
         background: "var(--s1)",
-        border: "0.5px solid var(--b1)",
+        border: isPreviewing ? "1.5px solid var(--ac)" : "0.5px solid var(--b1)",
         borderRadius: 14,
         overflow: "hidden",
         cursor: "default",
@@ -223,7 +378,15 @@
               alt: theme.name,
               style: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
             })
-          : React.createElement(ThumbMock, { cssVars: theme.css_vars })
+          : React.createElement(ThumbMock, { cssVars: theme.css_vars }),
+        isPreviewing && React.createElement("div", {
+          style: {
+            position: "absolute", top: 8, right: 8,
+            fontSize: 10, fontWeight: 600, padding: "3px 9px",
+            borderRadius: 99, background: "var(--ac)", color: "var(--ac-on)",
+            letterSpacing: "0.03em",
+          }
+        }, "Previewing")
       ),
 
       // Card body
@@ -238,14 +401,18 @@
         // Swatches
         React.createElement(Swatches, { cssVars: theme.css_vars }),
 
-        // Preview button — stub, wired in Stage 5
         React.createElement("button", {
           className: "btn-ghost",
-          style: { width: "100%", fontSize: 14, padding: "9px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
-          onClick: () => toast("Preview coming in the next update"),
+          style: {
+            width: "100%", fontSize: 14, padding: "9px 0",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            borderColor: isPreviewing ? "var(--ac)" : undefined,
+            color: isPreviewing ? "var(--ac-text)" : undefined,
+          },
+          onClick: () => onPreview(theme),
         },
-          React.createElement("i", { className: "ti ti-eye", style: { fontSize: 13 } }),
-          "Preview theme"
+          React.createElement("i", { className: isPreviewing ? "ti ti-eye-off" : "ti ti-eye", style: { fontSize: 13 } }),
+          isPreviewing ? "Exit preview" : "Preview theme"
         )
       )
     );
