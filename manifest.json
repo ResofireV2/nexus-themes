@@ -1,0 +1,39 @@
+{
+  "$schema": "https://YOUR-NEXUS-HOST/manifest_schema.json",
+  "manifest_version": 2,
+  "name": "Theme Showcase",
+  "slug": "theme-showcase",
+  "version": "1.0.0",
+  "module": "NexusThemes",
+  "js_bundle": "theme-showcase.js",
+  "description": "A curated showcase of Nexus themes with live in-browser preview.",
+  "author": "ResofireV2",
+  "homepage": "https://github.com/ResofireV2/nexus-themes",
+  "repository": "https://github.com/ResofireV2/nexus-themes",
+  "license": "MIT",
+  "tags": ["themes", "showcase"],
+  "explore": {
+    "label": "Themes",
+    "icon": "fa-palette",
+    "path": "/"
+  },
+  "admin_panel": {
+    "label": "Theme Showcase",
+    "icon": "fa-palette"
+  },
+  "routes": [
+    {"path": "/", "title": "Themes"}
+  ],
+  "permissions": [
+    {
+      "key": "can_view_themes",
+      "label": "View themes page",
+      "default": "everyone"
+    },
+    {
+      "key": "can_manage_themes",
+      "label": "Manage theme entries",
+      "default": "admin"
+    }
+  ]
+}
