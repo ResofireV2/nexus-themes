@@ -242,7 +242,7 @@
         React.createElement("button", {
           className: "btn-ghost",
           style: { width: "100%", fontSize: 14, padding: "9px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 },
-          onClick: () => toast("Preview coming in the next update", "warn"),
+          onClick: () => toast("Preview coming in the next update"),
         },
           React.createElement("i", { className: "ti ti-eye", style: { fontSize: 13 } }),
           "Preview theme"
