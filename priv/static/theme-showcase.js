@@ -657,11 +657,11 @@
     async function handleSave(publishStatus) {
       if (cssVarsError) { toast("Fix CSS vars JSON before saving", "err"); return; }
       setSaving(true);
-      // Exclude server-managed fields from the payload when github_repo is set.
-      // stylesheet_url is stored by the server during GitHub fetch and should not
-      // be round-tripped through the form — doing so can cause path doubling.
       const payload = { ...form, status: publishStatus };
-      if (form.github_repo) delete payload.stylesheet_url;
+      // On UPDATE with github_repo set, exclude stylesheet_url to prevent path
+      // doubling (the server already has the correct stylesheet_path stored).
+      // On CREATE we must keep it so normalise_params can store stylesheet_path.
+      if (!isNew && form.github_repo) delete payload.stylesheet_url;
       // Send thumbnail_path (relative) directly — Theme.changeset casts thumbnail_path,
       // not thumbnail_url. Remove thumbnail_url to avoid confusion server-side.
       // thumbnail_path is set by handleThumbUpload; null means no new upload this session.
