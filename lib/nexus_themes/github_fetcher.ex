@@ -35,7 +35,7 @@ defmodule NexusThemes.GitHubFetcher do
         author:          meta["author"],
         description:     meta["description"],
         mode:            infer_mode(meta),
-        css_vars:        meta["css_vars"] || %{},
+        css_vars:        meta["variables"] || meta["css_vars"] || %{},
         stylesheet_url:  stylesheet_url(css_path),
         github_repo:     repo
       }}
