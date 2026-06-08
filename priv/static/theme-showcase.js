@@ -25,7 +25,31 @@
     "--t1","--t2","--t3","--t4","--t5",
     "--b1","--b2","--b3",
     "--ac","--ac-on","--ac-bg","--ac-border","--ac-text",
+    "--av-radius",
+    "--fs-ui","--fs-body","--fs-title","--fs-feed-title","--fs-content","--fs-code",
   ];
+
+  // Determine which data-theme mode a theme needs.
+  // "both" themes work in any mode — keep the user's current mode.
+  // "dark" or "light" only themes switch the user to the correct mode.
+  function targetModeFor(theme) {
+    if (theme.mode === "light") return "light";
+    if (theme.mode === "dark")  return "dark";
+    return null; // "both" — no switch needed
+  }
+
+  function applyMode(mode) {
+    if (!mode || !window._applyTheme) return;
+    // Save and restore localStorage around the _applyTheme call so the
+    // appearance cache is never polluted with preview-mode values.
+    const savedVars   = localStorage.getItem("nexus_appearance_vars");
+    const savedApp    = localStorage.getItem("nexus_appearance_app");
+    window._applyTheme(mode, window._appBrandingForTheme || {});
+    if (savedVars !== null) localStorage.setItem("nexus_appearance_vars", savedVars);
+    else localStorage.removeItem("nexus_appearance_vars");
+    if (savedApp !== null) localStorage.setItem("nexus_appearance_app", savedApp);
+    else localStorage.removeItem("nexus_appearance_app");
+  }
 
   function startPreview(theme) {
     const r = document.documentElement;
@@ -40,7 +64,13 @@
     const stylesheetEl        = document.getElementById("nexus-theme-stylesheet");
     const originalStylesheet  = stylesheetEl ? stylesheetEl.href : null;
 
-    // Apply theme CSS vars
+    // Switch to the mode this theme requires, if different from current
+    const target = targetModeFor(theme);
+    if (target && target !== originalDataTheme) {
+      applyMode(target);
+    }
+
+    // Apply theme CSS vars on top of the (possibly switched) mode vars
     const vars = theme.css_vars || {};
     Object.entries(vars).forEach(([k, v]) => {
       if (k.startsWith("--")) r.style.setProperty(k, v);
@@ -86,14 +116,21 @@
 
     const r = document.documentElement;
 
-    // Restore CSS vars
+    // If the preview switched modes, switch back first so the core JS
+    // re-applies the correct mode vars before we restore the originals.
+    const currentMode = r.getAttribute("data-theme") || "dark";
+    if (state.originalDataTheme && state.originalDataTheme !== currentMode) {
+      applyMode(state.originalDataTheme);
+    }
+
+    // Restore CSS vars captured before the preview started
     PREVIEW_VARS.forEach(v => {
       const original = state.originalVars?.[v];
       if (original) r.style.setProperty(v, original);
       else r.style.removeProperty(v);
     });
 
-    // Restore data-theme
+    // Restore data-theme attribute
     if (state.originalDataTheme) r.setAttribute("data-theme", state.originalDataTheme);
 
     // Restore stylesheet
