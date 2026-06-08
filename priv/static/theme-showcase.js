@@ -153,6 +153,19 @@
     } catch { return null; }
   }
 
+  // On hard refresh, sessionStorage survives but the preview CSS vars and
+  // stylesheet are gone. Detect this by checking the navigation type:
+  // "reload" means a hard refresh — clear the preview key so the banner
+  // and card state don't show a stale "previewing" state.
+  (function clearPreviewOnReload() {
+    try {
+      const nav = performance.getEntriesByType("navigation")[0];
+      if (nav && nav.type === "reload") {
+        sessionStorage.removeItem(PREVIEW_KEY);
+      }
+    } catch {}
+  })();
+
 
 
   // ---------------------------------------------------------------------------
