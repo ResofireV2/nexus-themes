@@ -95,6 +95,17 @@
       }
     }
 
+    // Inject theme script if present — remove any existing preview script first
+    const scriptUrl = theme.script_url || null;
+    const existingScript = document.getElementById("nexus-theme-showcase-preview-script");
+    if (existingScript) existingScript.remove();
+    if (scriptUrl) {
+      const script  = document.createElement("script");
+      script.src    = scriptUrl;
+      script.id     = "nexus-theme-showcase-preview-script";
+      document.head.appendChild(script);
+    }
+
     // Persist preview state for the banner
     try {
       sessionStorage.setItem(PREVIEW_KEY, JSON.stringify({
@@ -103,6 +114,7 @@
         originalVars,
         originalDataTheme,
         originalStylesheet,
+        hadScript:         !!scriptUrl,
       }));
     } catch {}
   }
@@ -142,6 +154,16 @@
     // Remove any preview-only stylesheet element
     const previewEl = document.getElementById("nexus-theme-showcase-preview-stylesheet");
     if (previewEl) previewEl.remove();
+
+    // Call the theme script's cleanup function if it registered one,
+    // then remove the preview script element
+    if (state.hadScript) {
+      if (typeof window.__nexusThemeCleanup === "function") {
+        window.__nexusThemeCleanup();
+      }
+      const scriptEl = document.getElementById("nexus-theme-showcase-preview-script");
+      if (scriptEl) scriptEl.remove();
+    }
 
     sessionStorage.removeItem(PREVIEW_KEY);
   }

@@ -47,6 +47,7 @@ defmodule NexusThemes.ThemeContext do
       theme ->
         # Clean up stored files before removing the DB row
         delete_file_if_present(theme.stylesheet_path)
+        delete_file_if_present(theme.script_path)
         delete_file_if_present(theme.thumbnail_path)
         Repo.delete(theme)
         :ok

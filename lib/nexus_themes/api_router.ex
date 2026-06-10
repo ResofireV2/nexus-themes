@@ -126,6 +126,7 @@ defmodule NexusThemes.ApiRouter do
       status:           t.status,
       css_vars:         t.css_vars,
       stylesheet_url:   stylesheet_url(t.stylesheet_path),
+      script_url:       script_url(t.script_path),
       thumbnail_url:    thumbnail_url(t.thumbnail_path),
       github_repo:      t.github_repo,
       sort_order:       t.sort_order,
@@ -145,7 +146,13 @@ defmodule NexusThemes.ApiRouter do
         url -> Map.put(p, "stylesheet_path", url)
       end
     end)
-    |> Map.drop(["stylesheet_url", "thumbnail_url"])
+    |> then(fn p ->
+      case p["script_url"] do
+        nil -> p
+        url -> Map.put(p, "script_path", url)
+      end
+    end)
+    |> Map.drop(["stylesheet_url", "thumbnail_url", "script_url"])
   end
   defp stylesheet_url(nil), do: nil
   defp stylesheet_url(path) do
@@ -157,6 +164,18 @@ defmodule NexusThemes.ApiRouter do
       String.starts_with?(path, "/") ->
         path
       # Relative path — construct the full URL via Storage
+      true ->
+        Nexus.Extensions.Storage.url("theme-showcase", path)
+    end
+  end
+
+  defp script_url(nil), do: nil
+  defp script_url(path) do
+    cond do
+      String.starts_with?(path, "http://") or String.starts_with?(path, "https://") ->
+        path
+      String.starts_with?(path, "/") ->
+        path
       true ->
         Nexus.Extensions.Storage.url("theme-showcase", path)
     end

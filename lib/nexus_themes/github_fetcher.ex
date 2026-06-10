@@ -1,8 +1,8 @@
 defmodule NexusThemes.GitHubFetcher do
   @moduledoc """
-  Fetches a theme's latest GitHub release, extracts theme.json and theme.css
-  from the tarball, stores theme.css under the extension's storage directory,
-  and returns pre-fill data for the admin form.
+  Fetches a theme's latest GitHub release, extracts theme.json, theme.css,
+  and theme.js from the tarball, stores them under the extension's storage
+  directory, and returns pre-fill data for the admin form.
 
   Reuses the same tarball download/extraction pattern as Nexus.Themes.ThemeLoader
   and relies on the same GitHub token from admin integrations settings.
@@ -15,29 +15,31 @@ defmodule NexusThemes.GitHubFetcher do
 
   @doc """
   Fetches a GitHub repo URL, downloads the latest release tarball, extracts
-  theme.json and theme.css, stores theme.css locally, and returns a map
+  theme.json, theme.css, and theme.js, stores them locally, and returns a map
   suitable for pre-filling the admin form.
 
   Returns:
-    {:ok, %{name, author, description, mode, css_vars, stylesheet_path, github_repo}}
+    {:ok, %{name, author, description, mode, css_vars, stylesheet_url, script_url, github_repo}}
     {:error, reason}
   """
   def fetch(url) do
-    with {:ok, repo}    <- parse_repo(url),
-         {:ok, release} <- fetch_latest_release(repo),
-         build_dir      =  build_dir_for(repo),
-         :ok            <- download_and_extract(release.tarball_url, build_dir),
-         {:ok, meta}    <- read_theme_json(build_dir),
-         {:ok, css_path}<- store_theme_css(build_dir, repo) do
+    with {:ok, repo}     <- parse_repo(url),
+         {:ok, release}  <- fetch_latest_release(repo),
+         build_dir       =  build_dir_for(repo),
+         :ok             <- download_and_extract(release.tarball_url, build_dir),
+         {:ok, meta}     <- read_theme_json(build_dir),
+         {:ok, css_path} <- store_theme_css(build_dir, repo),
+         {:ok, js_path}  <- store_theme_js(build_dir, repo) do
       File.rm_rf(build_dir)
       {:ok, %{
-        name:            meta["name"],
-        author:          meta["author"],
-        description:     meta["description"],
-        mode:            infer_mode(meta),
-        css_vars:        meta["variables"] || meta["css_vars"] || %{},
-        stylesheet_url:  stylesheet_url(css_path),
-        github_repo:     repo
+        name:           meta["name"],
+        author:         meta["author"],
+        description:    meta["description"],
+        mode:           infer_mode(meta),
+        css_vars:       meta["variables"] || meta["css_vars"] || %{},
+        stylesheet_url: stylesheet_url(css_path),
+        script_url:     script_url(js_path),
+        github_repo:    repo
       }}
     else
       {:error, reason} ->
@@ -150,11 +152,28 @@ defmodule NexusThemes.GitHubFetcher do
     unless File.exists?(src) do
       {:ok, nil}
     else
-      # Use a subdirectory per repo slug to avoid collisions between themes
       repo_slug = repo |> String.split("/") |> List.last() |> String.downcase()
       subdir    = "themes/#{repo_slug}"
       :ok       = Nexus.Extensions.Storage.ensure_dir(@slug, subdir)
       dest_rel  = "#{subdir}/theme.css"
+      dest_abs  = Nexus.Extensions.Storage.path(@slug, dest_rel)
+
+      case File.cp(src, dest_abs) do
+        :ok  -> {:ok, dest_rel}
+        err  -> err
+      end
+    end
+  end
+
+  defp store_theme_js(build_dir, repo) do
+    src = Path.join(build_dir, "theme.js")
+    unless File.exists?(src) do
+      {:ok, nil}
+    else
+      repo_slug = repo |> String.split("/") |> List.last() |> String.downcase()
+      subdir    = "themes/#{repo_slug}"
+      :ok       = Nexus.Extensions.Storage.ensure_dir(@slug, subdir)
+      dest_rel  = "#{subdir}/theme.js"
       dest_abs  = Nexus.Extensions.Storage.path(@slug, dest_rel)
 
       case File.cp(src, dest_abs) do
@@ -179,4 +198,9 @@ defmodule NexusThemes.GitHubFetcher do
   defp stylesheet_url(nil), do: nil
   defp stylesheet_url(rel_path),
     do: Nexus.Extensions.Storage.url(@slug, rel_path)
+
+  defp script_url(nil), do: nil
+  defp script_url(rel_path),
+    do: Nexus.Extensions.Storage.url(@slug, rel_path)
+
 end

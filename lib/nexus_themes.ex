@@ -12,7 +12,10 @@ defmodule NexusThemes do
 
   @impl true
   def migrations do
-    [NexusThemes.Migrations.V1CreateThemes]
+    [
+      NexusThemes.Migrations.V1CreateThemes,
+      NexusThemes.Migrations.V2AddScriptPath,
+    ]
   end
 
   @impl true
