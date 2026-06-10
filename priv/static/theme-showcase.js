@@ -623,7 +623,7 @@
   const BLANK_FORM = {
     name: "", author: "", description: "",
     mode: "dark", status: "draft",
-    css_vars: {}, stylesheet_url: "",
+    css_vars: {}, stylesheet_url: "", script_url: null,
     github_repo: "", thumbnail_url: null, thumbnail_path: null,
   };
 
@@ -640,6 +640,7 @@
         status:         theme.status      || "draft",
         css_vars:       theme.css_vars    || {},
         stylesheet_url: theme.stylesheet_url || "",
+        script_url:     theme.script_url     || null,
         github_repo:    theme.github_repo || "",
         thumbnail_url:  theme.thumbnail_url || null,
         thumbnail_path: null, // set on upload, not round-tripped from API URL
@@ -735,7 +736,8 @@
       // doubling (the server already has the correct stylesheet_path stored).
       // On CREATE we must keep it so normalise_params can store stylesheet_path.
       if (!isNew && form.github_repo) delete payload.stylesheet_url;
-      if (!isNew && form.github_repo) delete payload.script_url;
+      // Only exclude script_url on update if already stored — if null, send it so it gets saved.
+      if (!isNew && form.github_repo && theme.script_url) delete payload.script_url;
       // Send thumbnail_path (relative) directly — Theme.changeset casts thumbnail_path,
       // not thumbnail_url. Remove thumbnail_url to avoid confusion server-side.
       // thumbnail_path is set by handleThumbUpload; null means no new upload this session.
