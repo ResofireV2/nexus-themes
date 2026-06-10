@@ -681,13 +681,14 @@
         });
         setForm(f => ({
           ...f,
-          name:           data.name        || f.name,
-          author:         data.author      || f.author,
-          description:    data.description || f.description,
-          mode:           data.mode        || f.mode,
-          css_vars:       data.css_vars    || f.css_vars,
+          name:           data.name           || f.name,
+          author:         data.author         || f.author,
+          description:    data.description    || f.description,
+          mode:           data.mode           || f.mode,
+          css_vars:       data.css_vars       || f.css_vars,
           stylesheet_url: data.stylesheet_url || f.stylesheet_url,
-          github_repo:    data.github_repo || f.github_repo,
+          script_url:     data.script_url     || f.script_url,
+          github_repo:    data.github_repo    || f.github_repo,
         }));
         if (data.css_vars) {
           setCssVarsText(JSON.stringify(data.css_vars, null, 2));
@@ -734,6 +735,7 @@
       // doubling (the server already has the correct stylesheet_path stored).
       // On CREATE we must keep it so normalise_params can store stylesheet_path.
       if (!isNew && form.github_repo) delete payload.stylesheet_url;
+      if (!isNew && form.github_repo) delete payload.script_url;
       // Send thumbnail_path (relative) directly — Theme.changeset casts thumbnail_path,
       // not thumbnail_url. Remove thumbnail_url to avoid confusion server-side.
       // thumbnail_path is set by handleThumbUpload; null means no new upload this session.
