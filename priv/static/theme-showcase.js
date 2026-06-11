@@ -229,7 +229,18 @@
   // Public Themes page — /ext/theme-showcase
   // ---------------------------------------------------------------------------
 
+  function useMobile() {
+    const [mobile, setMobile] = useState(() => window.innerWidth <= 767);
+    useEffect(() => {
+      const handler = () => setMobile(window.innerWidth <= 767);
+      window.addEventListener("resize", handler);
+      return () => window.removeEventListener("resize", handler);
+    }, []);
+    return mobile;
+  }
+
   function ThemesPage({ currentUser }) {
+    const isMobile                    = useMobile();
     const [themes, setThemes]         = useState(null);
     const [error, setError]           = useState(null);
     const [search, setSearch]         = useState("");
@@ -416,8 +427,8 @@
       filtered.length > 0 && React.createElement("div", {
         style: {
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-          gap: 16,
+          gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+          gap: 20,
         }
       },
         ...filtered.map(theme =>
